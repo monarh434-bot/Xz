@@ -4,10 +4,10 @@ import asyncio
 from telethon import TelegramClient, events
 from telethon.sessions import StringSession
 
-# ВПИШИ СВОИ ДАННЫЕ СЮДА
+# ВСТАВЬ СЮДА СВОИ ДАННЫЕ
 API_ID = 730880
 API_HASH = "9ca11338796d375b98ab716bc20603d7"
-SESSION_STRING = "1ApWapzMBu2vS2rtxe3o3dtMRcH8ugH0s-8WGEHL2EsNgKM7LJyFH7jj8KPhBAEWpEKTtS_aV8siRtsfeQEdDeYYx65yFs8v5qsfQcqzUmBp2-ag4h9K1gK6T7YTUlrqiXE-naCCrNDkFHjNnDvQ1D36GylCKBQ6_DI9UmoMxRxs9D6w7IAmHNPQwN7Gh6ZAY-KrhxkgrznRpv10712PrKoOIsSZ7FsUx_ti7YT7lUAeBxNIlLAMEsFP01FZf-Y_skijR-IFU_xHtjsCKr9yMI6k41YAlato8Mw_cZLSGaQ1ZB87XIkR-mrBZGMTe8wqz0Dnw6KYiykaJVEotnUB-5QSbf9RMYg8="
+SESSION_STRING = ""
 
 CONFIG_FILE = "config.json"
 
@@ -37,7 +37,7 @@ def normalize_session_string(value: str) -> str:
     if not value:
         return ""
     value = value.strip()
-    for d in ("—", "–", "−"):
+    for d in ["—", "–", "−"]:
         value = value.replace(d, "-")
     if value.lower().startswith("session string ="):
         value = value.split("=", 1)[1].strip()
@@ -46,6 +46,7 @@ def normalize_session_string(value: str) -> str:
 
 SESSION_STRING = normalize_session_string(SESSION_STRING)
 config = load_config()
+
 client = TelegramClient(StringSession(SESSION_STRING), API_ID, API_HASH)
 
 @client.on(events.NewMessage(outgoing=True, pattern=r"(?i)^/helpme$"))
@@ -85,6 +86,7 @@ async def grouplook_cmd(event):
         save_config(config)
         await event.reply(f"Группа сохранена вручную: {manual_id}")
         return
+
     config["source_chat"] = event.chat_id
     save_config(config)
     await event.reply(f"Текущая группа сохранена: {event.chat_id}")
@@ -97,12 +99,14 @@ async def botlook_cmd(event):
         save_config(config)
         await event.reply(f"Получатель сохранён вручную: {config['target_bot']}")
         return
+
     chat = await event.get_chat()
     username = getattr(chat, "username", None)
     if username:
         config["target_bot"] = f"@{username}"
     else:
         config["target_bot"] = event.chat_id
+
     save_config(config)
     await event.reply(f"Текущий чат сохранён как получатель: {config['target_bot']}")
 
@@ -138,19 +142,18 @@ async def photo_forwarder(event):
                     os.remove(temp_path)
             except Exception:
                 pass
+
     except Exception as e:
         print(f"[ERROR] Ошибка обработки фото: {e}")
 
 async def main():
-    if not SESSION_STRING or "PASTE_SESSION_STRING_HERE" in SESSION_STRING:
-        raise RuntimeError("Вставь SESSION_STRING в main.py")
-    if not API_HASH or "PASTE_API_HASH_HERE" in API_HASH:
-        raise RuntimeError("Вставь API_HASH в main.py")
+    if not API_ID or not API_HASH or not SESSION_STRING:
+        raise RuntimeError("Заполни API_ID, API_HASH и SESSION_STRING в main.py")
 
     await client.connect()
 
     if not await client.is_user_authorized():
-        raise RuntimeError("SESSION_STRING невалидна или не подходит к API_ID/API_HASH")
+        raise RuntimeError("Сессия невалидна. Получи новую через get_session.py и вставь в main.py")
 
     me = await client.get_me()
     print(f"[START] Userbot запущен: id={me.id} username={getattr(me, 'username', None)}")
